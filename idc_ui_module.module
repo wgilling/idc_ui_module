@@ -5,5 +5,8 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
     'my_template' => [
       'variables' => ['test_var' => NULL],
     ],
+    'my_block_template' => [
+      'variables' => ['test_var' => NULL],
+    ],
   ];
 }

@@ -16,7 +16,7 @@ class PageController extends ControllerBase {
    */
   public function PageOne() {
     return [
-      '#theme' => 'my_template',
+      '#theme' => 'my_block_template',
       '#test_var' => $this->t('moo'),
     ];
   }

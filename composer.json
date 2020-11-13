@@ -1,0 +1,6 @@
+{
+  "name": "jaredgalanis/idc-ui-module",
+  "type": "drupal-module",
+  "description": "Moo Module",
+  "require": {}
+}
