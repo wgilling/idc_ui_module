@@ -1,0 +1,4 @@
+name: iDC UI Module
+type: module
+core: 8.x
+description: A module to support UI features in iDC and the iDC UI Theme
