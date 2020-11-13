@@ -1,1 +1,1 @@
-# idc-ui-module
+# idc_ui_module
