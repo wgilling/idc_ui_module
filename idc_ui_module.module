@@ -8,5 +8,11 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
     'my_block_template' => [
       'variables' => ['test_var' => NULL],
     ],
+    'header_left_template' => [
+      'variables' => ['test_var' => NULL],
+    ],
+    'top_nav_template' => [
+      'variables' => ['test_var' => NULL],
+    ],
   ];
 }
