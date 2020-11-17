@@ -5,15 +5,15 @@ namespace Drupal\idc_ui_module\Plugin\Block;
 use Drupal\Core\Block\BlockBase;
 
 /**
- * Provides a 'Top Nav' Block.
+ * Provides a 'Footer' Block.
  *
  * @Block(
- *   id = "top_nav_block",
- *   admin_label = @Translation("Top nav block"),
+ *   id = "footer_block",
+ *   admin_label = @Translation("Footer block"),
  *   category = @Translation("Custom"),
  * )
  */
-class TopNavBlock extends BlockBase {
+class FooterBlock extends BlockBase {
 
   /**
    * {@inheritdoc}
@@ -22,8 +22,7 @@ class TopNavBlock extends BlockBase {
     $logged_in = \Drupal::currentUser()->isAuthenticated();
 
     return [
-      '#theme' => 'top_nav_template',
-      '#logged_in' => $logged_in,
+      '#theme' => 'footer_template',
     ];
   }
 

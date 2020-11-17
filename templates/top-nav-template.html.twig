@@ -20,21 +20,29 @@
         >
         <a
           class="text-white mr-5"
-          href="https://aplweb.jhuapl.edu/services/Pages/ResearchLibrary.aspx"
+          href="https://www.jhuapl.edu/Library/"
           >APL Library</a
         >
       </div>
       <div class="flex items-center">
         <a
           class="text-white mr-5"
-          href="#"
-          >Other resources</a
+          href="/contact"
+          >Contact us</a
         >
-        <a
-          class="text-white"
-          href="#"
-          >Log in</a
-        >
+        {% if logged_in %}
+          <a
+            class="text-white"
+            href="/user/logout"
+            >Log out</a
+          >
+        {% else %}
+          <a
+            class="text-white"
+            href="/user/login"
+            >Log in</a
+          >
+        {% endif %}
       </div>
     </div>
   </div>

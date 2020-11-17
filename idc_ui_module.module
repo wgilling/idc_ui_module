@@ -12,7 +12,10 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
       'variables' => ['test_var' => NULL],
     ],
     'top_nav_template' => [
-      'variables' => ['test_var' => NULL],
+      'variables' => ['logged_in' => NULL],
+    ],
+    'footer_template' => [
+      'variables' => [],
     ],
   ];
 }
