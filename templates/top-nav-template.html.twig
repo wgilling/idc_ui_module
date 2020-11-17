@@ -1,0 +1,21 @@
+<nav class="bg-blue-heritage text-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div class="flex items-center justify-between h-auto">
+      <div class="flex flex-col text-sm xl:text-base lg:flex-row lg:items-center lg:space-x-3 xl:space-x-5">
+        <a class="flex-no-wrap" href="http://library.jhu.edu">Sheridan Libraries</a>
+        <a class="flex-no-wrap" href="http://welch.jhmi.edu/welchone/">Welch Medical Library</a>
+        <a class="flex-no-wrap" href="http://www.sais-jhu.edu/atoz/mason-library-washington-dc">SAIS Library</a>
+        <a class="flex-no-wrap" href="http://musiclibrary.peabody.jhu.edu/home">Friedheim Music Library</a>
+        <a class="flex-no-wrap" href="https://www.jhuapl.edu/Library/">APL Library</a>
+      </div>
+      <div class="flex flex-col text-sm xl:text-base lg:flex-row items-center lg:space-x-3 xl:space-x-5">
+        <a href="/contact">Contact us</a>
+        {% if logged_in %}
+          <a href="/user/logout">Log out</a>
+        {% else %}
+          <a href="/user/login">Log in</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>
