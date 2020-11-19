@@ -1,5 +1,5 @@
 {
-  "name": "jaredgalanis/idc-ui-module",
+  "name": "jhu-idc/idc_ui_module",
   "type": "drupal-module",
   "description": "Moo Module",
   "require": {}
