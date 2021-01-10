@@ -44,9 +44,10 @@ class PageController extends ControllerBase {
       ->getStorage('file')
       ->load($thumbnail_id);
 
-      $image_url = $thumbnail->getFileUri();
-
-      $image_display_url = file_create_url($image_url);
+      if ($thumbnail) {
+        $image_url = $thumbnail->getFileUri();
+        $image_display_url = file_create_url($image_url);
+      }
 
       $obj= (object) ['url' => $image_display_url, 'item' => $item];
 
@@ -96,9 +97,10 @@ class PageController extends ControllerBase {
       ->getStorage('file')
       ->load($thumbnail_id);
 
-      $image_url = $thumbnail->getFileUri();
-
-      $image_display_url = file_create_url($image_url);
+      if ($thumbnail) {
+        $image_url = $thumbnail->getFileUri();
+        $image_display_url = file_create_url($image_url);
+      }
 
       $obj= (object) ['url' => $image_display_url, 'collection' => $collection];
 

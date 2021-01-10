@@ -8,18 +8,30 @@
   </div>
     <div class="px-4 py-5 sm:p-6 h-auto">
       <div class="flex overflow-x-scroll overflow-y-hidden items-center justify-start">
-        {% for collection in featured_collections %}
-          <div class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white">
-            <div class="h-48 w-64 bg-gray-200">
-              <img src={{collection.url}} class="object-contain h-48 w-full" />
+        {% if featured_collections|length > 0 %}
+          {% for collection in featured_collections %}
+            <div class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white">
+              <div class="flex h-48 w-64 bg-gray-200 items-center justify-center">
+                {% if collection.url %}
+                  <img src={{collection.url}} class="object-contain h-48 w-full" alt="featured collection image" />
+                {% else %}
+                  <div class="text-gray-600 text-2lg">
+                    No image available
+                  </div>
+                {% endif %}
+              </div>
+              <div class="h-16 py-4 px-2 text-center">
+                <h3 class="text-sm md:text-lg font-bold">
+                  {{collection.collection.title.value}}
+                </h3>
+              </div>
             </div>
-            <div class="h-16 py-4 px-2 text-center">
-              <h3 class="text-sm md:text-lg font-bold">
-                {{collection.collection.title.value}}
-              </h3>
-            </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-gray-600 text-2lg">
+            No featured collections set
           </div>
-        {% endfor %}
+        {% endif %}
       </div>
     </div>
   </div>
