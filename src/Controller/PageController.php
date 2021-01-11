@@ -23,9 +23,12 @@ class PageController extends ControllerBase {
       ]);
 
     $featured_collections_array = array();
-    // var_dump($featured_collections);
 
     foreach ($featured_collections as &$collection) {
+      if (!$collection->isPublished()) {
+        continue;
+      }
+
       $collection_id = $collection->id();
 
       $media = \Drupal::entityTypeManager()
@@ -78,6 +81,10 @@ class PageController extends ControllerBase {
     $featured_items_array = array();
 
     foreach ($featured_items as &$item) {
+      if (!$item->isPublished()) {
+        continue;
+      }
+
       $item_id = $item->id();
 
       $media = \Drupal::entityTypeManager()

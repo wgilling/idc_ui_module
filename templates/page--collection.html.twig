@@ -1,42 +1,50 @@
-<div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6 border">
-  <h2 class="text-2xl font-bold leading-6">
-    {{ collection.title.value }}
-  </h2>
-</div>
-<div class="p-4">
-  <div class="bg-white shadow">
-  <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6">
-    <h3 class="text-xl font-bold leading-6">
-      Featured Items
-    </h3>
+{% if collection.isPublished %}
+  <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6 border">
+    <h2 class="text-2xl font-bold leading-6">
+      {{ collection.title.value }}
+    </h2>
   </div>
-    <div class="px-4 py-5 sm:p-6 h-auto">
-      <div class="flex overflow-x-scroll overflow-y-hidden items-center justify-start">
-        {% if featured_items|length > 0 %}
-          {% for item in featured_items %}
-            <a href={{ "/items/#{item.item.id}" }} class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white">
-              <div class="flex h-48 w-64 bg-gray-200 items-center justify-center">
-                {% if item.url %}
-                  <img src={{item.url}} class="object-contain h-48 w-full" alt="featured item image" />
-                {% else %}
-                  <div class="text-gray-600 text-2lg">
-                    No image available
-                  </div>
-                {% endif %}
-              </div>
-              <div class="h-16 py-4 px-2 text-center">
-                <h3 class="text-sm md:text-lg font-bold">
-                  {{item.item.title.value}}
-                </h3>
-              </div>
-            </a>
-          {% endfor %}
-        {% else %}
-          <div class="text-gray-600 text-2lg">
-            No featured items set
-          </div>
-        {% endif %}
+  <div class="p-4">
+    <div class="bg-white shadow">
+    <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6">
+      <h3 class="text-xl font-bold leading-6">
+        Featured Items
+      </h3>
+    </div>
+      <div class="px-4 py-5 sm:p-6 h-auto">
+        <div class="flex overflow-x-scroll overflow-y-hidden items-center justify-start">
+          {% if featured_items|length > 0 %}
+            {% for item in featured_items %}
+              <a href={{ "/items/#{item.item.id}" }} class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white">
+                <div class="flex h-48 w-64 bg-gray-200 items-center justify-center">
+                  {% if item.url %}
+                    <img src={{item.url}} class="object-contain h-48 w-full" alt="featured item image" />
+                  {% else %}
+                    <div class="text-gray-600 text-2lg">
+                      No image available
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="h-16 py-4 px-2 text-center">
+                  <h3 class="text-sm md:text-lg font-bold">
+                    {{item.item.title.value}}
+                  </h3>
+                </div>
+              </a>
+            {% endfor %}
+          {% else %}
+            <div class="text-gray-600 text-2lg">
+              No featured items set
+            </div>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
-</div>
+{% else %}
+  <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6 border">
+    <h2 class="text-2xl font-bold leading-6">
+      Collection is not available
+    </h2>
+  </div>
+{% endif %}
