@@ -11,15 +11,20 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
     'footer_template' => [
       'variables' => [],
     ],
+    'page--collections' => [
+      'variables' => [
+        'featured_collections' => NULL,
+      ],
+    ],
     'page--collection' => [
       'variables' => [
         'collection' => NULL,
         'featured_items' => NULL,
       ],
     ],
-    'page--collections' => [
+    'page--item' => [
       'variables' => [
-        'featured_collections' => NULL,
+        'item' => NULL,
       ],
     ],
   ];

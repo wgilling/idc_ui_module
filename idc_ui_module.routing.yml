@@ -5,12 +5,22 @@ idc-ui-module.collections:
   requirements:
     _permission: 'access content'
 idc-ui-module.collection:
-  path: 'collection/{collection}'
+  path: 'collections/{collection}'
   defaults:
     _controller: '\Drupal\idc_ui_module\Controller\PageController::collection'
   options:
     parameters:
       collection:
+        type: entity:node
+  requirements:
+    _permission: 'access content'
+idc-ui-module.item:
+  path: 'items/{item}'
+  defaults:
+    _controller: '\Drupal\idc_ui_module\Controller\PageController::item'
+  options:
+    parameters:
+      item:
         type: entity:node
   requirements:
     _permission: 'access content'
