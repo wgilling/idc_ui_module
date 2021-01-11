@@ -1,0 +1,37 @@
+<div>
+  <div class="bg-white shadow">
+    <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6">
+      <h3 class="text-xl font-bold leading-6">
+        Featured Collections
+      </h3>
+    </div>
+    <div class="px-4 py-5 sm:p-6 h-auto">
+      <div class="flex overflow-x-scroll overflow-y-hidden items-center justify-start">
+        {% if featured_collections|length > 0 %}
+          {% for collection in featured_collections %}
+            <a href={{ "/collections/#{collection.collection.id}" }} class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white">
+              <div class="flex h-48 w-64 bg-gray-200 items-center justify-center">
+                {% if collection.url %}
+                  <img src={{collection.url}} class="object-contain h-48 w-full" alt="featured collection image" />
+                {% else %}
+                  <div class="text-gray-600 text-2lg">
+                    No image available
+                  </div>
+                {% endif %}
+              </div>
+              <div class="h-16 py-4 px-2 text-center">
+                <h3 class="text-sm md:text-lg font-bold">
+                  {{collection.collection.title.value}}
+                </h3>
+              </div>
+            </a>
+          {% endfor %}
+        {% else %}
+          <div class="text-gray-600 text-2lg">
+            No featured collections set
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

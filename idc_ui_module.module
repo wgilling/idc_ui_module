@@ -2,12 +2,6 @@
 
 function idc_ui_module_theme($existing, $type, $theme, $path) {
   return [
-    'my_template' => [
-      'variables' => ['test_var' => NULL],
-    ],
-    'my_block_template' => [
-      'variables' => ['test_var' => NULL],
-    ],
     'header_left_template' => [
       'variables' => ['test_var' => NULL],
     ],
@@ -16,6 +10,22 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
     ],
     'footer_template' => [
       'variables' => [],
+    ],
+    'page--collections' => [
+      'variables' => [
+        'featured_collections' => NULL,
+      ],
+    ],
+    'page--collection' => [
+      'variables' => [
+        'collection' => NULL,
+        'featured_items' => NULL,
+      ],
+    ],
+    'page--item' => [
+      'variables' => [
+        'item' => NULL,
+      ],
     ],
   ];
 }

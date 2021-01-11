@@ -1,7 +1,26 @@
-idc-ui-module.page_one:
-  path: '/idc-ui-module'
+idc-ui-module.collections:
+  path: 'collections'
   defaults:
-    _controller: '\Drupal\idc_ui_module\Controller\PageController::PageOne'
-    _title: 'My First Page and Menu Item'
+    _controller: '\Drupal\idc_ui_module\Controller\CollectionsController::collections'
+  requirements:
+    _permission: 'access content'
+idc-ui-module.collection:
+  path: 'collections/{collection}'
+  defaults:
+    _controller: '\Drupal\idc_ui_module\Controller\CollectionsController::collection'
+  options:
+    parameters:
+      collection:
+        type: entity:node
+  requirements:
+    _permission: 'access content'
+idc-ui-module.item:
+  path: 'items/{item}'
+  defaults:
+    _controller: '\Drupal\idc_ui_module\Controller\CollectionsController::item'
+  options:
+    parameters:
+      item:
+        type: entity:node
   requirements:
     _permission: 'access content'
