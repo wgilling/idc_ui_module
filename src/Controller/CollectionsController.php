@@ -3,16 +3,7 @@ namespace Drupal\idc_ui_module\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 
-/**
- * Provides route responses for the Example module.
- */
-class PageController extends ControllerBase {
-  /**
-   * Returns a simple page.
-   *
-   * @return array
-   *   A simple renderable array.
-   */
+class CollectionsController extends ControllerBase {
   public function collections() {
     $featured_collections = \Drupal::entityTypeManager()
       ->getListBuilder('node')
@@ -62,12 +53,6 @@ class PageController extends ControllerBase {
     ];
   }
 
-  /**
-   * Returns a simple page.
-   *
-   * @return array
-   *   A simple renderable array.
-   */
   public function collection(\Drupal\node\Entity\Node $collection) {
     $featured_items = \Drupal::entityTypeManager()
       ->getListBuilder('node')
@@ -119,12 +104,6 @@ class PageController extends ControllerBase {
     ];
   }
 
-  /**
-   * Returns a simple page.
-   *
-   * @return array
-   *   A simple renderable array.
-   */
   public function item(\Drupal\node\Entity\Node $item) {
     return [
       '#theme' => 'page--item',

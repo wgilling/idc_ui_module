@@ -1,13 +1,13 @@
 idc-ui-module.collections:
   path: 'collections'
   defaults:
-    _controller: '\Drupal\idc_ui_module\Controller\PageController::collections'
+    _controller: '\Drupal\idc_ui_module\Controller\CollectionsController::collections'
   requirements:
     _permission: 'access content'
 idc-ui-module.collection:
   path: 'collections/{collection}'
   defaults:
-    _controller: '\Drupal\idc_ui_module\Controller\PageController::collection'
+    _controller: '\Drupal\idc_ui_module\Controller\CollectionsController::collection'
   options:
     parameters:
       collection:
@@ -17,7 +17,7 @@ idc-ui-module.collection:
 idc-ui-module.item:
   path: 'items/{item}'
   defaults:
-    _controller: '\Drupal\idc_ui_module\Controller\PageController::item'
+    _controller: '\Drupal\idc_ui_module\Controller\CollectionsController::item'
   options:
     parameters:
       item:
