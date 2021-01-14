@@ -15,7 +15,7 @@
         <div class="flex overflow-x-scroll overflow-y-hidden items-center justify-start">
           {% if featured_items|length > 0 %}
             {% for item in featured_items %}
-              <a href={{ "/items/#{item.item.id}" }} class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white">
+              <a href={{ "/node/#{item.id}" }} class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white">
                 <div class="flex h-48 w-64 bg-gray-200 items-center justify-center">
                   {% if item.url %}
                     <img src={{item.url}} class="object-contain h-48 w-full" alt="featured item image" />
@@ -27,7 +27,7 @@
                 </div>
                 <div class="h-16 py-4 px-2 text-center">
                   <h3 class="text-sm md:text-lg font-bold">
-                    {{item.item.title.value}}
+                    {{item.title}}
                   </h3>
                 </div>
               </a>
