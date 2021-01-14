@@ -1,0 +1,5 @@
+services:
+  mymodule.route_subscriber:
+    class: Drupal\idc_ui_module\Routing\RouteSubscriber
+    tags:
+      - { name: event_subscriber }
