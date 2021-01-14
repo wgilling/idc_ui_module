@@ -42,7 +42,7 @@ class CollectionsController extends ControllerBase {
         $image_display_url = file_create_url($image_url);
       }
 
-      $obj= (object) ['url' => $image_display_url, 'collection' => $collection];
+      $obj= (object) ['url' => $image_display_url, 'title' => $collection->get('title')->getString(), 'id' => $collection->id()];
 
       array_push($featured_collections_array, $obj);
     }
@@ -92,7 +92,7 @@ class CollectionsController extends ControllerBase {
         $image_display_url = file_create_url($image_url);
       }
 
-      $obj= (object) ['url' => $image_display_url, 'item' => $item];
+      $obj= (object) ['url' => $image_display_url, 'title' => $item->get('title')->getString(), 'id' => $item->id()];
 
       array_push($featured_items_array, $obj);
     }
