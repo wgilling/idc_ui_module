@@ -50,6 +50,9 @@ class CollectionsController extends ControllerBase {
     return [
       '#theme' => 'page--collections',
       '#featured_collections' => $featured_collections_array,
+      '#cache' => [
+        'max-age'=> 0
+      ]
     ];
   }
 
