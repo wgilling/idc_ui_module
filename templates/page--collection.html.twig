@@ -42,7 +42,10 @@
     </div>
   </div>
   <div class="p-4">
-    <div id="collection-details-list"></div>
+    <div id="collection-details-list"
+      data-collection-id="{{collection.id}}"
+      data-collection-title="{{collection.title.value}}"
+    ></div>
   </div>
 {% else %}
   <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6 border">
