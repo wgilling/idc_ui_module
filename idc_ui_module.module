@@ -20,6 +20,7 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
       'variables' => [
         'collection' => NULL,
         'featured_items' => NULL,
+        'primary_description' => NULL,
       ],
     ],
     'page--item' => [

@@ -1,8 +1,33 @@
 {% if collection.isPublished %}
-  <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6 border">
-    <h2 class="text-2xl font-bold leading-6">
-      {{ collection.title.value }}
-    </h2>
+  <div class="flex flex-col bg-white">
+    <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6 border">
+      <h2 class="text-2xl font-bold leading-6">
+        {{ collection.title.value }}
+      </h2>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 sm:px-6 py-5">
+      <div class="col-span-2">
+        <div class="text-gray-600 mb-4">
+          About the collection
+        </div>
+        {% for description in collection.field_description %}
+          <div class="mb-4">
+            {{ description.value }}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="col-span-1 flex flex-col align-center place-content-center">
+        <button class="p-4 bg-blue-spirit text-black mb-4 w-full">
+          Ask the collection admin
+        </buton>
+        <button class="p-4 bg-blue-spirit text-black mb-4 w-full">
+          Newly added items
+        </buton>
+        <button class="p-4 bg-blue-spirit text-black w-full">
+          Link to this collection
+        </buton>
+      </div>
+    </div>
   </div>
   <div class="p-4">
     <div class="bg-white shadow">

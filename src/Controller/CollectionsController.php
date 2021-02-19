@@ -95,15 +95,34 @@ class CollectionsController extends ControllerBase {
         $image_display_url = file_create_url($image_url);
       }
 
-      $obj= (object) ['url' => $image_display_url, 'title' => $item->get('title')->getString(), 'id' => $item->id()];
+      $obj = (object) ['url' => $image_display_url, 'title' => $item->get('title')->getString(), 'id' => $item->id()];
 
       array_push($featured_items_array, $obj);
+    }
+
+    $lang_entity_refs = $collection->get('field_description')->referencedEntities();
+    $english = null;
+
+    foreach ($lang_entity_refs as &$langTerm) {
+      if ($langTerm->get('field_language_code')->getString() == 'eng') {
+        $english = $langTerm;
+      }
+    }
+
+    $descriptions = $collection->get('field_description')->getValue();
+    $primary_description = null;
+
+    foreach ($descriptions as &$description) {
+      if ($description['target_id'] == $english->get('tid')->getString()) {
+        $primary_description = $description['value'];
+      }
     }
 
     return [
       '#theme' => 'page--collection',
       '#collection' => $collection,
       '#featured_items' => $featured_items_array,
+      '#primary_description' => $primary_description
     ];
   }
 
