@@ -118,11 +118,14 @@ class CollectionsController extends ControllerBase {
       }
     }
 
+    $citable_url = $collection->get('field_citable_url')->getValue()[0]["uri"];
+
     return [
       '#theme' => 'page--collection',
       '#collection' => $collection,
       '#featured_items' => $featured_items_array,
-      '#primary_description' => $primary_description
+      '#primary_description' => $primary_description,
+      '#citable_url' => $citable_url
     ];
   }
 

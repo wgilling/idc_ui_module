@@ -16,7 +16,7 @@ class NodeDisplayController extends NodeViewController {
     if ($node_type == 'collection_object') {
       return CollectionsController::collection($node);
     // } elseif ($node_type == 'islandora_object') {
-      // return CollectionsController::item($node);
+    //   return CollectionsController::item($node);
     } else {
       return parent::view($node, $view_mode, $langcode);
     }
