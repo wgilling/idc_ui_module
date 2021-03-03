@@ -1,19 +1,46 @@
 {% if collection.isPublished %}
-  <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6 border">
-    <h2 class="text-2xl font-bold leading-6">
-      {{ collection.title.value }}
-    </h2>
-  </div>
-  <div class="p-4">
-    <div class="bg-white shadow">
-      <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6">
-        <h3 class="text-xl font-bold leading-6">
-          Featured Items
-        </h3>
+  <div class="flex flex-col bg-white">
+    <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6 border">
+      <h2 class="text-2xl font-bold leading-6">
+        {{ collection.title.value }}
+      </h2>
+    </div>
+    <div class="grid gap-2 grid-cols-1 md:grid-cols-3 px-4 md:px-5 md:py-5">
+      <div class="col-span-2">
+        <div class="text-gray-600 mb-4">
+          About the collection
+        </div>
+        {% if primary_description %}
+          {{ primary_description }}&nbsp;(English)
+        {% else %}
+          <div class="text-gray-600 text-2lg">
+            No description available
+          </div>
+        {% endif %}
       </div>
-      <div class="px-4 py-5 sm:p-6 h-auto">
-        <div class="flex overflow-x-scroll overflow-y-hidden items-center justify-start">
-          {% if featured_items|length > 0 %}
+      <div
+        id="about-collection-button-group"
+        class="col-span-1 flex flex-col align-center place-content-center mt-2"
+        data-collection-url={{citable_url}}
+      >
+      </div>
+    </div>
+    <div
+      id="about-collection-drawer"
+      class="p-4 min-h-36"
+      data-collection-uuid={{collection.uuid.value}}
+    ></div>
+  </div>
+  {% if featured_items|length > 0 %}
+    <div class="p-4">
+      <div class="bg-white shadow">
+        <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6">
+          <h3 class="text-xl font-bold leading-6">
+            Featured Items
+          </h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6 h-auto">
+          <div class="flex overflow-x-scroll overflow-y-hidden items-center justify-start">
             {% for item in featured_items %}
               <a href={{ "/node/#{item.id}" }} class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white">
                 <div class="flex h-48 w-64 bg-gray-200 items-center justify-center">
@@ -32,15 +59,11 @@
                 </div>
               </a>
             {% endfor %}
-          {% else %}
-            <div class="text-gray-600 text-2lg">
-              No featured items set
-            </div>
-          {% endif %}
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  {% endif %}
   <div class="p-4">
     <div id="collection-details-list"
       data-collection-id="{{collection.id}}"
