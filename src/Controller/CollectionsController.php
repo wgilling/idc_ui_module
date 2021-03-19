@@ -119,15 +119,13 @@ class CollectionsController extends ControllerBase {
     }
 
     $citable_url = $collection->get('field_citable_url')->getValue()[0]["uri"];
-    $contact_email = $collection->get('field_collection_contact_email')->getValue();
 
     return [
       '#theme' => 'page--collection',
       '#collection' => $collection,
       '#featured_items' => $featured_items_array,
       '#primary_description' => $primary_description,
-      '#citable_url' => $citable_url,
-      '#contact_email' => $contact_email,
+      '#citable_url' => $citable_url
     ];
   }
 
