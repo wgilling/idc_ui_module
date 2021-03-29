@@ -6,9 +6,8 @@ idc-ui-module.collections:
     _permission: 'access content'
 
 idc-ui-module.search:
-  path: 'idc-search'
+  path: 'search'
   defaults:
     _controller: '\Drupal\idc_ui_module\Controller\SearchController::searchPage'
-    _title: 'Search'
   requirements:
     _permission: 'access content'
