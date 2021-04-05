@@ -29,5 +29,11 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
         'item' => NULL,
       ],
     ],
+    'page--search' => [
+      'variables' => []
+    ],
+    'idc_search_template' => [
+      'variables' => []
+    ]
   ];
 }

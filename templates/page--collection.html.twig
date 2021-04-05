@@ -66,9 +66,13 @@
     </div>
   {% endif %}
   <div class="p-4">
-    <div id="collection-details-list"
+    <div
+      id="idc-search"
+      data-type="collection"
       data-collection-id="{{collection.id}}"
-      data-collection-title="{{collection.title.value}}"
+      data-title="{{collection.title.value}}"
+      data-search-placeholder="Search this collection ..."
+      data-pagination-label="items"
     ></div>
   </div>
 {% else %}
