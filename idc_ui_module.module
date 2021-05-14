@@ -34,6 +34,9 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
     ],
     'idc_search_template' => [
       'variables' => []
+    ],
+    'page--advanced-search' => [
+      'variables' => []
     ]
   ];
 }

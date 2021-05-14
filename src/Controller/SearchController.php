@@ -12,4 +12,10 @@ class SearchController extends ControllerBase {
     ];
   }
 
+  public function advancedSearch() {
+    return [
+      '#theme' => 'page--advanced-search'
+    ];
+  }
+
 }
