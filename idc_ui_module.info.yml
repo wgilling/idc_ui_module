@@ -6,3 +6,4 @@ package: Search
 dependencies:
   - facets:facets
   - drupal:rest
+  - islandora
