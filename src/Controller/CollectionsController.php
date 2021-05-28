@@ -125,7 +125,10 @@ class CollectionsController extends ControllerBase {
       '#collection' => $collection,
       '#featured_items' => $featured_items_array,
       '#primary_description' => $primary_description,
-      '#citable_url' => $citable_url
+      '#citable_url' => $citable_url,
+      '#cache' => [
+        'max-age'=> 0
+      ]
     ];
   }
 
