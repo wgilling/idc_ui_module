@@ -7,3 +7,5 @@ dependencies:
   - facets:facets
   - drupal:rest
   - islandora
+  - contact_storage
+  - contact_emails
