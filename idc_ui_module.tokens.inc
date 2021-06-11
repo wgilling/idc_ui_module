@@ -32,7 +32,10 @@ function idc_ui_module_tokens($type, $tokens, array $data, array $options, \Drup
             ->get('field_member_of')
             ->referencedEntities();
 
-          $replacements[$original] = $parents[0]->id();
+          if (!empty($parents) && count($parents) > 0) {
+            $replacements[$original] = array_values($parents)[0]->id();
+          }
+
           break;
       }
     }
