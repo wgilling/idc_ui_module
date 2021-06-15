@@ -40,3 +40,15 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
     ]
   ];
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function idc_ui_module_form_views_exposed_form_alter(&$form, $form_state) {
+  // XXX: Exposed filters with REST appear to still render a form even though
+  // it technically does not use one.
+  if ($form['#action'] === "/search_rest_endpoint") {
+    // Set the limit to be close to the lower bound URL parameter limit.
+    $form['query']['#maxlength'] = 65536;
+  }
+}
