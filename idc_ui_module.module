@@ -52,3 +52,20 @@ function idc_ui_module_form_views_exposed_form_alter(&$form, $form_state) {
     $form['query']['#maxlength'] = 65536;
   }
 }
+
+/**
+ * Implements hook_views_post_render().
+ */
+function idc_ui_module_views_post_render(ViewExecutable $view, &$output, CachePluginBase $cache) {
+  // XXX: Cache max-age 0 isn't able to be utlized by anonymous users.
+  // Similarly, a Serializer's cacheable metadata does not get bubbled up to the
+  // view and thus we are stuck with setting our own cache tags. In the event
+  // indexing more than just content (nodes) gets done this should be updated
+  // to include those tags as well.
+  // @see: https://www.drupal.org/docs/drupal-apis/cache-api/cache-max-age
+  // @see: https://www.drupal.org/project/drupal/issues/3210146
+  // @see: https://www.drupal.org/project/facets/issues/2939710
+  if ($view->id() === 'solr_search_content') {
+    $output['#cache']['tags'][] = 'node_list';
+  }
+}

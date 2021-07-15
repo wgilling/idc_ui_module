@@ -102,6 +102,13 @@ class IdcSerializer extends Serializer {
   /**
    * {@inheritdoc}
    */
+  public function getCacheMaxAge() {
+    return 0;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function render() {
     $rows = [];
     $result = [];
