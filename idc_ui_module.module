@@ -1,5 +1,8 @@
 <?php
 
+use Drupal\views\Plugin\views\cache\CachePluginBase;
+use Drupal\views\ViewExecutable;
+
 function idc_ui_module_theme($existing, $type, $theme, $path) {
   return [
     'header_left_template' => [
