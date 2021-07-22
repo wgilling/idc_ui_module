@@ -35,7 +35,7 @@
     </div>
   </div>
   {% if featured_items|length > 0 %}
-    <div class="p-4">
+    <div id="featured-items" class="p-4">
       <div class="container mx-auto bg-white shadow">
         <div class="bg-white px-4 py-5 border-b border-gray-200 sm:px-6">
           <h3 class="text-xl font-bold leading-6">
@@ -45,7 +45,7 @@
         <div class="px-4 py-5 sm:p-6 h-auto">
           <div class="flex overflow-x-scroll overflow-y-hidden items-center justify-start">
             {% for item in featured_items %}
-              <a href={{ "/node/#{item.id}" }} class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white">
+              <a href={{ "/node/#{item.id}" }} class="flex-col mx-4 mb-4 w-64 h-64 shadow-md bg-white" data-test-featured-item>
                 <div class="flex h-48 w-64 bg-gray-100 items-center justify-center">
                   {% if item.url %}
                     <img src={{item.url}} class="object-contain h-48 w-full" alt="featured item image" />
