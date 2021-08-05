@@ -44,6 +44,83 @@ function idc_ui_module_theme($existing, $type, $theme, $path) {
   ];
 }
 
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
+function idc_ui_module_file_download($uri) {
+  $MEDIA_TYPES = array(
+    (object) [
+      'type' => 'image',
+      'source_field' => 'field_media_image',
+    ],
+    (object) [
+      'type' => 'file',
+      'source_field' => 'field_media_file',
+    ],
+    (object) [
+      'type' => 'document',
+      'source_field' => 'field_media_document',
+    ],
+    (object) [
+      'type' => 'audio',
+      'source_field' => 'field_media_audio_file',
+    ],
+    (object) [
+      'type' => 'video',
+      'source_field' => 'field_media_video_file',
+    ],
+    (object) [
+      'type' => 'extracted_text',
+      'source_field' => 'field_media_file',
+    ],
+    (object) [
+      'type' => 'fits_technical_metadata',
+      'source_field' => 'field_media_file',
+    ],
+  );
+
+
+  $files = file_load_multiple(array(), array(
+    'uri' => $uri,
+  ));
+
+  if (count($files)) {
+    foreach ($files as $item) {
+      if ($item->uri === $uri) {
+        $file = $item;
+        break;
+      }
+    }
+  }
+
+  $file = \Drupal::entityTypeManager()
+  ->getStorage('file')
+  ->loadByProperties([
+    'status' => 1,
+    'uri' => $uri,
+  ]);
+
+  if($file) {
+    $current_user = \Drupal::currentUser();
+    $authorized_roles = ['administrator', 'collection_level_admin', 'global_admin'];
+    $is_authorized = !!count(array_intersect($authorized_roles, array_values($current_user->getRoles())));
+
+    foreach ($MEDIA_TYPES as &$media_type_obj) {
+      $media = \Drupal::entityTypeManager()
+      ->getStorage('media')
+      ->loadByProperties([
+        'status' => 1,
+        $media_type_obj->source_field => array_values($file)[0]->id(),
+      ]);
+
+      if (array_values($media)[0] && array_values($media)[0]->get('field_restricted_access')->getString() == "1" && !$is_authorized) {
+        return -1;
+      }
+    }
+  }
+
+  return;
+}
+
 /**
  * Implements hook_form_FORM_ID_alter().
  */

@@ -21,3 +21,10 @@ idc-ui-module.advanced-search:
     _title: 'Advanced Search'
   requirements:
     _permission: 'access content'
+
+idc-ui-module.download_path:
+  path: '/media_download_all/{entity_type}/{entity_id}'
+  defaults:
+    _controller: '\Drupal\idc_ui_module\Controller\DownloadController::download'
+  requirements:
+    _permission: 'access content'
