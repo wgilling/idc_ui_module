@@ -1,5 +1,6 @@
 <?php
 
+use Drupal\file\Entity\File;
 use Drupal\views\Plugin\views\cache\CachePluginBase;
 use Drupal\views\ViewExecutable;
 
@@ -79,7 +80,7 @@ function idc_ui_module_file_download($uri) {
   );
 
 
-  $files = file_load_multiple(array(), array(
+  $files = File::loadMultiple(array(), array(
     'uri' => $uri,
   ));
 
