@@ -1,6 +1,7 @@
 name: iDC UI Module
 type: module
 core: 8.x
+core_version_requirement: ^8 || ^9
 description: A module to support UI features in iDC and the iDC UI Theme
 package: Search
 dependencies:
