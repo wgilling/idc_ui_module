@@ -29,6 +29,7 @@ class CollectionsController extends ControllerBase {
           'bundle' => 'image',
           'status' => 1,
           'field_media_of' => $collection_id,
+          'field_media_use' => 20,
         ]);
 
       $thumbnail_id = array_values($media)[0]->thumbnail->target_id;
@@ -82,13 +83,16 @@ class CollectionsController extends ControllerBase {
           'bundle' => 'image',
           'status' => 1,
           'field_media_of' => $item_id,
+          'field_media_use' => 20,
         ]);
 
       $thumbnail_id = array_values($media)[0]->thumbnail->target_id;
 
       $thumbnail = \Drupal::entityTypeManager()
-      ->getStorage('file')
-      ->load($thumbnail_id);
+        ->getStorage('file')
+        ->load($thumbnail_id);
+
+      $image_display_url = '';
 
       if ($thumbnail) {
         $image_url = $thumbnail->getFileUri();
