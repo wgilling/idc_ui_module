@@ -13,6 +13,14 @@ class CollectionsController extends ControllerBase {
         'type.target_id' => 'collection_object'
       ]);
 
+    $thumbnail_taxonomy_term = \Drupal::entityTypeManager()
+      ->getListBuilder('taxonomy_term')
+      ->getStorage()
+      ->loadByProperties([
+        'status' => 1,
+        'name' => 'Thumbnail Image',
+      ]);
+
     $featured_collections_array = array();
 
     foreach ($featured_collections as &$collection) {
@@ -29,7 +37,7 @@ class CollectionsController extends ControllerBase {
           'bundle' => 'image',
           'status' => 1,
           'field_media_of' => $collection_id,
-          'field_media_use' => 20,
+          'field_media_use' => array_values($thumbnail_taxonomy_term)[0]->id(),
         ]);
 
       $thumbnail_id = array_values($media)[0]->thumbnail->target_id;
@@ -67,6 +75,15 @@ class CollectionsController extends ControllerBase {
         'field_member_of' => $collection->id()
       ]);
 
+    // Get the 'Thumbnail Image' taxonomy term
+    $thumbnail_taxonomy_term = \Drupal::entityTypeManager()
+      ->getListBuilder('taxonomy_term')
+      ->getStorage()
+      ->loadByProperties([
+        'status' => 1,
+        'name' => 'Thumbnail Image',
+      ]);
+
     $featured_items_array = array();
 
     foreach ($featured_items as &$item) {
@@ -83,7 +100,7 @@ class CollectionsController extends ControllerBase {
           'bundle' => 'image',
           'status' => 1,
           'field_media_of' => $item_id,
-          'field_media_use' => 20,
+          'field_media_use' => array_values($thumbnail_taxonomy_term)[0]->id()
         ]);
 
       $thumbnail_id = array_values($media)[0]->thumbnail->target_id;
