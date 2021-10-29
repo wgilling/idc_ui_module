@@ -3,6 +3,8 @@ idc-ui-module.collections:
   defaults:
     _controller: '\Drupal\idc_ui_module\Controller\CollectionsController::collections'
     _title: 'All collections'
+  options:
+    no_cache: TRUE
   requirements:
     _permission: 'access content'
 
