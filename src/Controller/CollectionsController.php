@@ -43,8 +43,10 @@ class CollectionsController extends ControllerBase {
       $thumbnail_id = array_values($media)[0]->thumbnail->target_id;
 
       $thumbnail = \Drupal::entityTypeManager()
-      ->getStorage('file')
-      ->load($thumbnail_id);
+        ->getStorage('file')
+        ->load($thumbnail_id);
+
+      $image_display_url = '';
 
       if ($thumbnail) {
         $image_url = $thumbnail->getFileUri();
