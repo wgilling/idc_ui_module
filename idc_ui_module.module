@@ -113,7 +113,7 @@ function idc_ui_module_file_download($uri) {
         $media_type_obj->source_field => array_values($file)[0]->id(),
       ]);
 
-      if (array_values($media)[0] && array_values($media)[0]->get('field_restricted_access')->getString() == "1" && !$is_authorized) {
+      if (isset(array_values($media)[0]) && array_values($media)[0]->get('field_restricted_access')->getString() == "1" && !$is_authorized) {
         return -1;
       }
     }
