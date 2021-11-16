@@ -105,6 +105,11 @@ function idc_ui_module_file_download($uri) {
     $authorized_roles = ['administrator', 'collection_level_admin', 'global_admin'];
     $is_authorized = !!count(array_intersect($authorized_roles, array_values($current_user->getRoles())));
 
+    # authorize access if user is special user #1, which Drupal treats as a kind of admin
+    if (!$is_authorized) {
+      $is_authorized = $current_user->id() == "1";
+    }
+
     foreach ($MEDIA_TYPES as &$media_type_obj) {
       $media = \Drupal::entityTypeManager()
       ->getStorage('media')
