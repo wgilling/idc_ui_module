@@ -3,3 +3,8 @@ services:
     class: Drupal\idc_ui_module\Routing\RouteSubscriber
     tags:
       - { name: event_subscriber }
+  idc_ui_module.breadcrumb:
+    class: Drupal\idc_ui_module\Breadcrumb\IdcBreadcrumbBuilder
+    arguments: ['@entity_type.manager', '@config.factory']
+    tags:
+      - { name: breadcrumb_builder, priority: 100 }
