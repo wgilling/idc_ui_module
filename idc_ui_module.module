@@ -167,3 +167,19 @@ function idc_ui_module_form_contact_message_repository_item_contact_form_alter(&
     $form['subject']['widget'][0]['value']['#default_value'] = $node->getTitle() . ' (' . $node->id() . ')';
   }
 }
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * @param $variables
+ */
+function idc_ui_module_preprocess_status_messages(&$variables) {
+  if(isset($variables['message_list']['status'])){
+    $status_messages = $variables['message_list']['status'];
+    foreach($status_messages as $delta => $message) {
+      if (strpos((string) $message->jsonSerialize(), 'Export complete') !== FALSE) {
+        $variables['message_list']['status'][$delta] = Drupal\Core\Render\Markup::create(str_replace('http', 'https', $message->jsonSerialize()));
+      }
+    }
+  }
+}
