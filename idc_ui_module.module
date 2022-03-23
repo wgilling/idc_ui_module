@@ -183,3 +183,78 @@ function idc_ui_module_preprocess_status_messages(&$variables) {
     }
   }
 }
+
+/**
+ * Implements hook_media_insert().
+ */
+function idc_ui_module_media_insert($media) {
+  if ($media->bundle() != 'extracted_text') {
+    return;
+  }
+
+  reindexGrandParent($media);
+}
+
+/**
+ * Implements hook_media_update().
+ */
+function idc_ui_module_media_update($media) {
+  if ($media->bundle() != 'extracted_text') {
+    return;
+  }
+
+  reindexGrandParent($media);
+}
+
+
+/**
+ * Reindexes parent node for a media. No-op if parent does not exist.
+ *
+ * @param Media whose parent you want to reindex.
+ */
+function reindexGrandParent($media) {
+  if (!$media->hasField('field_media_of')) {
+    return NULL;
+  }
+  $field = $media->get('field_media_of');
+  if ($field->isEmpty()) {
+    return NULL;
+  }
+  $parent = $field->first()
+    ->get('entity')
+    ->getTarget();
+
+  if ($parent === NULL) {
+    return NULL;
+  }
+  $parent = $parent->getValue();
+
+  $model_references = $parent->get('field_model')->referencedEntities();
+
+  if ($model_references) {
+    $model_type = $model_references[0]->get('name')->getString();
+  }
+
+  if ($model_type != 'Page') {
+    return NULL;
+  }
+
+  if (!$parent->hasField('field_member_of')) {
+    return NULL;
+  }
+  $field = $parent->get('field_member_of');
+  if ($field->isEmpty()) {
+    return NULL;
+  }
+  $grand_parent = $field->first()
+    ->get('entity')
+    ->getTarget();
+
+  if ($grand_parent === NULL) {
+    return;
+  }
+  $grand_parent = $grand_parent->getValue();
+
+  $grand_parent->original = $grand_parent;
+  search_api_entity_update($grand_parent);
+}
