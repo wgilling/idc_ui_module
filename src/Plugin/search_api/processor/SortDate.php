@@ -65,28 +65,23 @@ class SortDate extends ProcessorPluginBase {
     if ($node) {
       if ($node->hasField('field_sort_date') && !$node->field_sort_date->isEmpty()) {
         $date = $node->field_sort_date->value;
-        $this->logger('got field_sort_date, date = ' . $date);
-      }
-      elseif ($node->hasField('field_date_published') && !$node->field_date_published->isEmpty()) {
-        $date = $this->_getEarliestDateFrom($node, 'field_date_published');
-        $this->logger('got field_date_published, date = ' . $date);
-      }
-      elseif ($node->hasField('field_date_created') && !$node->field_date_created->isEmpty()) {
-        $date = $this->_getEarliestDateFrom($node, 'field_date_created');
-        $this->logger('got field_date_created, date = ' . $date);
       }
       else {
+        // Pick the lower of the possible values from pub or created dates.
         $date = FALSE;
+        if ($node->hasField('field_date_published') && !$node->field_date_published->isEmpty()) {
+          $date = $this->_getEarliestDateFrom($node, 'field_date_published');
+        }
+        if ($node->hasField('field_date_created') && !$node->field_date_created->isEmpty()) {
+          $tmp = $this->_getEarliestDateFrom($node, 'field_date_created');
+          $date = ($tmp < $date) ? $tmp : $date;
+        }
       }
       if ($date) {
-        $this->logger('ok a');
         $fields = $item->getFields(FALSE);
         $fields = $this->getFieldsHelper()
           ->filterForPropertyPath($fields, NULL, 'sort_date');
-        $this->logger('ok b');
         foreach ($fields as $field) {
-          $this->logger('a field : date = ' . $date);
-        //  $this->logger('field keys : ' . print_r($field, true));
           $field->addValue($date);
         }
       }
@@ -94,30 +89,31 @@ class SortDate extends ProcessorPluginBase {
     }
   }
 
-  function logger($string) {
-    \Drupal::logger('idc_ui_module')->info($string);
-    // echo $string . "\n";
-  }
-
   function _getEarliestDateFrom($node, $fieldname) {
-    $this_date = $node->$fieldname->value;
-    $date = '';
-    if ($this_date != "nan") {
-      $this->logger('_getEarliestDateFrom $this_date = ' . $this_date);
-      // Special handling for YYYY/YYYY
-      if (strstr($this_date, "/") && (strlen($this_date) == 9) && (substr($this_date, 4,1) == "/")) {
-        $parts = explode("/", $this_date, 2);
-        if (count($parts) == 2 && is_numeric(0 + $parts[0]) && is_numeric(0 + $parts[1])) {
-          $lower_val = ($parts[0] < $parts[1]) ? $parts[0] : $parts[1];
-          return $lower_val;
+    $dates = [];
+    foreach ($node->get("$fieldname") as $node_field_item) {
+      $this_date = $node_field_item->value;
+      $date = '';
+      if ($this_date != "nan") {
+        // Special handling for YYYY/YYYY
+        if (strstr($this_date, "/") && (strlen($this_date) == 9) && (substr($this_date, 4,1) == "/")) {
+          $parts = explode("/", $this_date, 2);
+          if (count($parts) == 2 && is_numeric(0 + $parts[0]) && is_numeric(0 + $parts[1])) {
+            $date = ($parts[0] < $parts[1]) ? $parts[0] : $parts[1];
+          }
+        }
+        else {
+          // Default EDTF handling for a date value coming from the node field.
+          $iso = EDTFUtils::iso8601Value($this_date);
+          $iso_one = explode("T", $iso)[0];
+          $components = explode('-', $iso_one);
+          $date = array_shift($components);
         }
       }
-      $iso = EDTFUtils::iso8601Value($this_date);
-      $iso_one = explode("T", $iso)[0];
-      $components = explode('-', $iso_one);
-      $date = array_shift($components);
+      $dates[$date] = $date;
     }
-    return $date;
+    $min_date = min(array_values($dates));
+    return $min_date;
   }
 
 }
