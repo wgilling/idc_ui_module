@@ -35,6 +35,7 @@ class SolrYears extends ProcessorPluginBase {
         'label' => $this->t('Solr Years'),
         'description' => $this->t('The year values for each item (Sort date, Pub dates, Created dates).'),
         'type' => 'string',
+        'is_list' => TRUE,
         'processor_id' => $this->getPluginId(),
       ];
       $properties['solr_years'] = new ProcessorProperty($definition);
@@ -64,10 +65,10 @@ class SolrYears extends ProcessorPluginBase {
         // Pick the lower of the possible values from pub or created dates.
         $date = FALSE;
         if ($node->hasField('field_date_published') && !$node->field_date_published->isEmpty()) {
-          $dates[] = array_merge($dates, $this->_getDatesFrom($node, 'field_date_published'));
+          $dates = $this->_getDatesFrom($node, 'field_date_published', $dates);
         }
         if ($node->hasField('field_date_created') && !$node->field_date_created->isEmpty()) {
-          $dates[] = array_merge($dates, $this->_getDatesFrom($node, 'field_date_created'));
+          $dates = $this->_getDatesFrom($node, 'field_date_created', $dates);
         }
       }
       if (count($dates) > 0) {
@@ -83,8 +84,7 @@ class SolrYears extends ProcessorPluginBase {
     }
   }
 
-  function _getDatesFrom($node, $fieldname) {
-    $dates = [];
+  function _getDatesFrom($node, $fieldname, array $dates) {
     foreach ($node->get("$fieldname") as $node_field_item) {
       $this_date = $node_field_item->value;
       $date = '';
