@@ -9,12 +9,12 @@ use Drupal\search_api\Processor\ProcessorProperty;
 use Drupal\controlled_access_terms\EDTFUtils;
 
 /**
- * Adds the item's single sort year value to the indexed data.
+ * Adds the item's year values derived from 'Sort date', 'Pub dates', and 'Created dates' to the indexed data.
  *
  * @SearchApiProcessor(
- *   id = "sort_date",
- *   label = @Translation("Sort Date"),
- *   description = @Translation("Derived from item's 'Sort date', 'Pub dates', or 'Creation dates' to the indexed data."),
+ *   id = "solr_years",
+ *   label = @Translation("Solr Years"),
+ *   description = @Translation("Derived from all year values taken from item's 'Sort date', 'Pub dates', and 'Created dates' to the indexed data."),
  *   stages = {
  *     "add_properties" = 0,
  *   },
@@ -22,7 +22,7 @@ use Drupal\controlled_access_terms\EDTFUtils;
  *   hidden = true,
  * )
  */
-class SortDate extends ProcessorPluginBase {
+class SolrYears extends ProcessorPluginBase {
 
   /**
    * {@inheritdoc}
@@ -32,12 +32,12 @@ class SortDate extends ProcessorPluginBase {
 
     if (!$datasource) {
       $definition = [
-        'label' => $this->t('Sort Date'),
-        'description' => $this->t('The sort date for each item.'),
-        'type' => 'integer',
+        'label' => $this->t('Solr Years'),
+        'description' => $this->t('The year values for each item (Sort date, Pub dates, Created dates).'),
+        'type' => 'string',
         'processor_id' => $this->getPluginId(),
       ];
-      $properties['sort_date'] = new ProcessorProperty($definition);
+      $properties['solr_years'] = new ProcessorProperty($definition);
     }
 
     return $properties;
@@ -48,44 +48,42 @@ class SortDate extends ProcessorPluginBase {
    */
   public function addFieldValues(ItemInterface $item) {
     $node = $item->getOriginalObject()->getValue();
+
     /*
-     This logic needs to save only ONE year value -- which
-     should be:
-    
+     This logic needs to save the year values from: 
       field_sort_date
-        If this has a value, use this and we are done.
-    
-     else take the earliest year value from either: 
       field_date_published
       field_date_created
     */
     if ($node) {
+      $dates = [];
       if ($node->hasField('field_sort_date') && !$node->field_sort_date->isEmpty()) {
-        $date = $node->field_sort_date->value;
+        $dates[$node->field_sort_date->value] = $node->field_sort_date->value;
       }
       else {
         // Pick the lower of the possible values from pub or created dates.
         $date = FALSE;
         if ($node->hasField('field_date_published') && !$node->field_date_published->isEmpty()) {
-          $date = $this->_getEarliestDateFrom($node, 'field_date_published');
+          $dates[] = array_merge($dates, $this->_getDatesFrom($node, 'field_date_published'));
         }
         if ($node->hasField('field_date_created') && !$node->field_date_created->isEmpty()) {
-          $tmp = $this->_getEarliestDateFrom($node, 'field_date_created');
-          $date = ($tmp < $date) ? $tmp : $date;
+          $dates[] = array_merge($dates, $this->_getDatesFrom($node, 'field_date_created'));
         }
       }
-      if ($date) {
+      if (count($dates) > 0) {
         $fields = $item->getFields(FALSE);
         $fields = $this->getFieldsHelper()
-          ->filterForPropertyPath($fields, NULL, 'sort_date');
+          ->filterForPropertyPath($fields, NULL, 'solr_years');
         foreach ($fields as $field) {
-          $field->addValue($date);
+          foreach ($dates as $date) {
+            $field->addValue($date);
+          }
         }
       }
     }
   }
 
-  function _getEarliestDateFrom($node, $fieldname) {
+  function _getDatesFrom($node, $fieldname) {
     $dates = [];
     foreach ($node->get("$fieldname") as $node_field_item) {
       $this_date = $node_field_item->value;
@@ -95,7 +93,11 @@ class SortDate extends ProcessorPluginBase {
         if (strstr($this_date, "/") && (strlen($this_date) == 9) && (substr($this_date, 4,1) == "/")) {
           $parts = explode("/", $this_date, 2);
           if (count($parts) == 2 && is_numeric(0 + $parts[0]) && is_numeric(0 + $parts[1])) {
-            $date = ($parts[0] < $parts[1]) ? $parts[0] : $parts[1];
+            $date_from = ($parts[0] < $parts[1]) ? $parts[0] : $parts[1];
+            $date_to = ($parts[0] < $parts[1]) ? $parts[1] : $parts[0];
+            for ($d = $date_from; $d < $date_to; $d++) {
+              $dates[$d] = $d;
+            }
           }
         }
         else {
@@ -108,8 +110,7 @@ class SortDate extends ProcessorPluginBase {
         $dates[$date] = $date;
       }
     }
-    $min_date = min(array_values($dates));
-    return $min_date;
+    return $dates;
   }
 
 }
