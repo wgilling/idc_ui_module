@@ -34,7 +34,7 @@ class SortDate extends ProcessorPluginBase {
       $definition = [
         'label' => $this->t('Sort Date'),
         'description' => $this->t('The sort date for each item.'),
-        'type' => 'integer',
+        'type' => 'date',
         'processor_id' => $this->getPluginId(),
       ];
       $properties['sort_date'] = new ProcessorProperty($definition);
@@ -108,7 +108,7 @@ class SortDate extends ProcessorPluginBase {
         $dates[$date] = $date;
       }
     }
-    $min_date = min(array_values($dates));
+    $min_date = strtotime(min(array_values($dates)));
     return $min_date;
   }
 
