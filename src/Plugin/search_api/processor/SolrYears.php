@@ -6,7 +6,8 @@ use Drupal\search_api\Datasource\DatasourceInterface;
 use Drupal\search_api\Item\ItemInterface;
 use Drupal\search_api\Processor\ProcessorPluginBase;
 use Drupal\search_api\Processor\ProcessorProperty;
-use Drupal\controlled_access_terms\EDTFUtils;
+// Do not need to include EDTFUtils unless EDTF parsing needed to pull out the years
+// use Drupal\controlled_access_terms\EDTFUtils;
 
 /**
  * Adds the item's year values derived from 'Sort date', 'Pub dates', and 'Created dates' to the indexed data.
@@ -34,7 +35,7 @@ class SolrYears extends ProcessorPluginBase {
       $definition = [
         'label' => $this->t('Solr Years'),
         'description' => $this->t('The year values for each item (Sort date, Pub dates, Created dates).'),
-        'type' => 'string',
+        'type' => 'date',
         'is_list' => TRUE,
         'processor_id' => $this->getPluginId(),
       ];
@@ -90,7 +91,37 @@ class SolrYears extends ProcessorPluginBase {
       $date = '';
       if ($this_date != "nan") {
         // Special handling for YYYY/YYYY
-        if (strstr($this_date, "/") && (strlen($this_date) == 9) && (substr($this_date, 4,1) == "/")) {
+        // There are several cases of EDTF date formats that will break this or can potentially be handled individually.
+        if (strstr($this_date, "?") || strstr($this_date, '~') || strstr($this_date, "..") || strstr($this_date, "%") || strstr($this_date, "[")) {
+        }
+        // Potential handling for formats like YYYY-MM/YYYY-MM and YYYY-MM-DD/YYYY-MM-DD, but
+        // the loop size is hard to guess... do we create an additional entry for every month
+        // between YYYY-MM (a) and YYYY-MM (b) or does this just skip year values?
+        //
+        // YYYY (a) to YYYY (b) is easy to assume it loops on a year-basis.
+        /*
+        elseif (strstr($this_date, "/") && (strlen($this_date) == 9) && (substr($this_date, 4,1) == "/")) {
+          $parts = explode("/", $this_date, 2);
+          if (count($parts) == 2 && is_numeric(0 + $parts[0]) && is_numeric(0 + $parts[1])) {
+            $date_from = ($parts[0] < $parts[1]) ? $parts[0] : $parts[1];
+            $date_to = ($parts[0] < $parts[1]) ? $parts[1] : $parts[0];
+            for ($d = $date_from; $d < $date_to; $d++) {
+              $dates[$d . '-01'] = $d . '-01';
+            }
+          }
+        }
+        elseif (strstr($this_date, "/") && (strlen($this_date) == 15) && (substr($this_date, 7,1) == "/")) {
+          $parts = explode("/", $this_date, 2);
+          if (count($parts) == 2 && is_numeric(0 + $parts[0]) && is_numeric(0 + $parts[1])) {
+            $date_from = ($parts[0] < $parts[1]) ? $parts[0] : $parts[1];
+            $date_to = ($parts[0] < $parts[1]) ? $parts[1] : $parts[0];
+            for ($d = $date_from; $d < $date_to; $d++) {
+              $dates[$d] = $d;
+            }
+          }
+        }
+        */
+        elseif (strstr($this_date, "/") && (strlen($this_date) == 21) && (substr($this_date, 10,1) == "/")) {
           $parts = explode("/", $this_date, 2);
           if (count($parts) == 2 && is_numeric(0 + $parts[0]) && is_numeric(0 + $parts[1])) {
             $date_from = ($parts[0] < $parts[1]) ? $parts[0] : $parts[1];
@@ -101,11 +132,8 @@ class SolrYears extends ProcessorPluginBase {
           }
         }
         else {
-          // Default EDTF handling for a date value coming from the node field.
-          $iso = EDTFUtils::iso8601Value($this_date);
-          $iso_one = explode("T", $iso)[0];
-          $components = explode('-', $iso_one);
-          $date = array_shift($components);
+          $iso = strtotime($this_date);
+          $date = $this_date;
         }
         $dates[$date] = $date;
       }
