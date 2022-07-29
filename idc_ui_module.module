@@ -3,6 +3,7 @@
 use Drupal\file\Entity\File;
 use Drupal\views\Plugin\views\cache\CachePluginBase;
 use Drupal\views\ViewExecutable;
+use Drupal\taxonomy\Entity\Term;
 
 function idc_ui_module_theme($existing, $type, $theme, $path) {
   return [
@@ -258,3 +259,113 @@ function reindexGrandParent($media) {
   $grand_parent->original = $grand_parent;
   search_api_entity_update($grand_parent);
 }
+
+/**
+ * Lets modules alter the Solarium select query before executing it.
+ *
+ * After this hook, the select query will be finally converted into an
+ * expression that will be processed by the lucene query parser. Therefore you
+ * can't modify the 'q' parameter here, because it gets overwritten by that
+ * conversion. If you need to modify the 'q' parameter you should implement an
+ * event listener instead of this hook that handles the solarium events (our
+ * connector injects the drupal event handler into solarium) or implement
+ * hook_search_api_solr_converted_query() instead. If you want to force a
+ * different parser like edismax you must set the 'defType' parameter
+ * accordingly.
+ *
+ * @param \Solarium\Core\Query\QueryInterface $solarium_query
+ *   The Solarium query object, as generated from the Search API query.
+ * @param \Drupal\search_api\Query\QueryInterface $query
+ *   The Search API query object representing the executed search query.
+ */
+function idc_ui_module_search_api_solr_query_alter(\Solarium\Core\Query\QueryInterface $solarium_query, \Drupal\search_api\Query\QueryInterface $query) {
+  $search = array_key_exists('query', $_GET) ? $_GET['query'] : "";
+  \Drupal::logger('idc_ui_module')->info("search = " . $search);
+  if (strstr($search, "*")) {
+    \Drupal::logger('idc_ui_module')->info("search contains wildcard = " . $search);
+    $queryfields = $solarium_query->getEDisMax()->getQueryFields();
+    \Drupal::logger('idc_ui_module')->info("queryfields = <pre>" . print_r($queryfields, true) . '</pre>');
+  
+    $custom_query = idc_ui_module_build_solr_query($search, $queryfields);
+    $solarium_query->setQuery('');
+    $solarium_query->addParam('q.alt', $custom_query);
+    $solarium_query->addParam("qt", "edismax");
+    $solarium_query->addParam('defType', 'edismax');
+    /*
+    // JHU does not use group or index the content type
+    $access_filter = ''; // 'ss_type:"islandoraobject"'; // idc_ui_module_get_account_access_filter();
+    // \Drupal::logger('bd_custom_search')->info('$access_filter = ' . $access_filter);
+    $solarium_query->addParam('fq', $access_filter);
+    */
+  }
+  else {
+    \Drupal::logger('idc_ui_module')->info("search does not contain wildcard = " . $search);
+  }
+}
+
+/**
+ * Build the Solr query based on the $search.
+ *
+ * $queryfields will be something like this:
+ *   "tm_X3b_en_description^1 tm_X3b_und_description^1 tm_X3b_en_field_corp_alt_name^1 ..."
+ */
+function idc_ui_module_build_solr_query(string $search, string $queryfields) {
+  // strip off parenthesis from the search
+  $build_query_str = '';
+  $search = ltrim(rtrim($search, ')'), '(');
+  $terms = explode(" ", $search);
+  $query_fields_array = explode(" ", $queryfields);
+  foreach ($terms as $term) {
+    // This part may be problematic if the term is stopwords are configured or if the
+    // term otherwise is skipped by solr -- such as short or long terms less than 3
+    // characters or longer than 100. Both of these settings are turned off currently
+    // in the current config.
+    $build_term_query = [];
+    \Drupal::logger('idc_ui_module')->info("term = " . $term);
+    foreach ($query_fields_array as $queryfield) {
+      $build_term_query[] = $queryfield . ':' . $term;
+    }
+    $build_query_str .= '(' . implode(" ", $build_term_query) . ") ";
+  }
+  $retstr = ($build_query_str) ? rtrim($build_query_str) : "*:*";
+  \Drupal::logger('idc_ui_module')->info("build_solr_query return <pre>" . $retstr . '</pre>');
+  return $retstr;
+}
+
+// JHU does not use groups for access control.
+/*
+function idc_ui_module_get_account_access_filter() {
+  $current_user = \Drupal::currentUser();
+  $account = \Drupal\user\Entity\User::load($current_user->id());
+  $account_roles = $account->getRoles();
+  $super_user = ($account->isAuthenticated() && (in_array("administrator", $account_roles)));
+  // Start off with the filter that we need...
+  $conditions = ['ss_type:"islandoraobject"'];
+  if (!$super_user) {
+    $permission_checker = \Drupal::service('group_permission.checker');
+    foreach ($account_roles as $account_role) {
+      \Drupal::logger('idc_ui_module')->info('ROLE: ' . $account_role);
+    }
+
+    // for each access term, get the term, get the group, check the access -- if it is false then it should be constrained from the query.
+    $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree('islandora_access');
+    foreach ($terms as $term) {
+      // Get the group corresponding to the term name -- like "Admin-only access"
+      $group_results = \Drupal::entityTypeManager()->getStorage('group')->loadByProperties(['label' => $term->name]);
+      if (is_null($group_results)) {
+        \Drupal::logger('idc_ui_module')->info('NULL group loaded by "' . $term->name . '"');
+      }
+      else {
+        \Drupal::logger('idc_ui_module')->info("conditions = <pre>(" . implode(" AND ", $conditions) . ')</pre>');
+        $group = reset($group_results);
+        $can_view = $permission_checker->hasPermissionInGroup('view group_node:islandora_object entity', $current_user, $group);
+        if (!$can_view) {
+          $conditions[] = '!itm_field_access_terms:' . $term->tid;
+        }
+      }
+    }
+  }
+  \Drupal::logger('idc_ui_module')->info("conditions = <pre>(" . implode(" AND ", $conditions) . ')</pre>');
+  return '(' . implode(" AND ", $conditions) . ')';
+}
+*/
