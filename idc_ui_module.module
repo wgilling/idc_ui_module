@@ -3,7 +3,10 @@
 use Drupal\file\Entity\File;
 use Drupal\views\Plugin\views\cache\CachePluginBase;
 use Drupal\views\ViewExecutable;
+/*
+// JHU does not use group for access check based on field_access_terms.
 use Drupal\taxonomy\Entity\Term;
+*/
 
 function idc_ui_module_theme($existing, $type, $theme, $path) {
   return [
@@ -285,7 +288,6 @@ function idc_ui_module_search_api_solr_query_alter(\Solarium\Core\Query\QueryInt
     \Drupal::logger('idc_ui_module')->info("search contains wildcard = " . $search);
     $queryfields = $solarium_query->getEDisMax()->getQueryFields();
     \Drupal::logger('idc_ui_module')->info("queryfields = <pre>" . print_r($queryfields, true) . '</pre>');
-  
     $custom_query = idc_ui_module_build_solr_query($search, $queryfields);
     $solarium_query->setQuery('');
     $solarium_query->addParam('q.alt', $custom_query);
@@ -294,7 +296,7 @@ function idc_ui_module_search_api_solr_query_alter(\Solarium\Core\Query\QueryInt
     /*
     // JHU does not use group or index the content type
     $access_filter = ''; // 'ss_type:"islandoraobject"'; // idc_ui_module_get_account_access_filter();
-    // \Drupal::logger('bd_custom_search')->info('$access_filter = ' . $access_filter);
+    // \Drupal::logger('idc_ui_module')->info('$access_filter = ' . $access_filter);
     $solarium_query->addParam('fq', $access_filter);
     */
   }
@@ -311,26 +313,252 @@ function idc_ui_module_search_api_solr_query_alter(\Solarium\Core\Query\QueryInt
  */
 function idc_ui_module_build_solr_query(string $search, string $queryfields) {
   // strip off parenthesis from the search
-  $build_query_str = '';
-  $search = ltrim(rtrim($search, ')'), '(');
-  $terms = explode(" ", $search);
-  $query_fields_array = explode(" ", $queryfields);
-  foreach ($terms as $term) {
-    // This part may be problematic if the term is stopwords are configured or if the
-    // term otherwise is skipped by solr -- such as short or long terms less than 3
-    // characters or longer than 100. Both of these settings are turned off currently
-    // in the current config.
-    $build_term_query = [];
-    \Drupal::logger('idc_ui_module')->info("term = " . $term);
-    foreach ($query_fields_array as $queryfield) {
-      $build_term_query[] = $queryfield . ':' . $term;
+  $logical_operators = ['AND', 'NOT', 'OR'];
+  $parentheses = [')', '('];
+  $search = idc_ui_module_adjust_for_midwildcards($search);
+  \Drupal::logger('idc_ui_module')->info("search adjusted to address mid-string wildcards = " . $search);  
+  $search = idc_ui_module_remove_stopwords($search);
+  /*
+  NOTE: if not provided by the user search, the "AND" and parentheses must be added.
+  User searched for "Resource Brochure"~45 AND "File copyright"~46 NOT "Legion Headquarters"~20
+  For proximity search, the resultant query fields logic must look like this.
+
+    User search: "Resource Brochure"~45 AND "File copyright"~46 NOT "Legion Headquarters"~20
+    q.alt = (tm_X3b_en_rendered_item:"Resource Brochure"~45)
+      AND (tm_X3b_en_rendered_item:"File copyright"~46)
+      NOT (tm_X3b_en_rendered_item:"Legion Headquarters"~20)
+
+    User search: "Resource Brochure"~45 NOT John
+    q.alt = (tm_X3b_en_rendered_item:"Resource Brochure"~45) NOT (tm_X3b_en_rendered_item:*John*)
+
+    User search: "Resource Brochure"~45 AND "File copyright"~46 NOT "Education John"~10
+    q.alt = tm_X3b_en_rendered_item:"Resource Brochure"~45 AND tm_X3b_en_rendered_item:"File copyright"~46 NOT tm_X3b_en_rendered_item:"Education John"~10
+  */
+
+  $removed_searchterms = idc_ui_module_remove_badlength_searchterms($search);
+  $search = str_replace(['(', ')', ' '], ['bcs_lparenthesis', 'bcs_rparenthesis', '_bcs_sp_l _bcs_sp_r'], $search);
+  $search = idc_ui_module_quoted_strings($search, TRUE);
+  $initial_search = $search = idc_ui_module_removespaces_quoted_strings($search, ' ', '+');
+  \Drupal::logger('idc_ui_module')->info('b initial_search = ' . $initial_search);
+
+  // Does the provided query use any of the logic operators that are not in UPPERCASE?
+  $tmp = ' ' . $search;
+  // for this process, strip off any parentheses.
+  $parts = explode(" ", str_replace($parentheses, '', $tmp));
+  $has_operators = $has_non_uppercase_operator = FALSE;
+  foreach ($parts as $part) {
+    if ($part) {
+      $part_nospecial = trim(str_replace(['bcs_lparenthesis', 'bcs_rparenthesis', '_bcs_sp_l' ,'_bcs_sp_r'], ['(', ')', ' ', ' '], $part));
+      $upperpart = strtoupper($part_nospecial);
+      $has_operators |= !(array_search($part_nospecial, $logical_operators) === FALSE);
+      $has_non_uppercase_operator |= (!(array_search($upperpart, $logical_operators) === FALSE) &&
+        ($part_nospecial <> $upperpart));
     }
-    $build_query_str .= '(' . implode(" ", $build_term_query) . ") ";
   }
-  $retstr = ($build_query_str) ? rtrim($build_query_str) : "*:*";
-  \Drupal::logger('idc_ui_module')->info("build_solr_query return <pre>" . $retstr . '</pre>');
-  return $retstr;
+  if ($has_non_uppercase_operator) {
+    \Drupal::messenger()->addMessage('All logical operators must be ALL-caps (like "AND", "NOT", "OR"). The search contained logical operators that were not in ALL-caps so they will be treated as ordinary search terms.', 'warning');
+  }
+  // Does the search string contain parenthesis, and are there the same number of open/close
+  // parenthesis?
+  if ((strstr($initial_search, "(") && (strstr($initial_search, ")"))) &&
+    (strstr($initial_search, "(") <= (strstr($initial_search, "(")))) {
+    $open_p = explode("(", $initial_search);
+    $close_p = explode(")", $initial_search);
+    if (count($open_p) != count($close_p)) {
+      \Drupal::messenger()->addMessage('The number of left parenthesis does not match the number of right parenthesis. The query will remove all parentheses characters.', 'warning');
+      $search = str_replace($parentheses, '', $search);
+      $initial_search = $search;
+      $has_parentheses = FALSE;
+    }
+    else {
+      $has_parentheses = TRUE;
+    }
+  }
+  \Drupal::logger('idc_ui_module')->info('removed_searchterms = ' . print_r($removed_searchterms, true));
+
+  if ($search && count($removed_searchterms) > 0) {
+    \Drupal::messenger()->addMessage('The search included at least one search term that is outside the required length between 2 and 100 characters. The remaining search does not include "' . implode('", "', $removed_searchterms) . '".', 'warning');
+  }
+
+  // Treat any set of terms as AND like "apples bananas cherries" would really be "apples AND bananas AND cherries"
+  if (!$has_operators) {
+    $search = $initial_search = str_replace(" ", " AND ", $initial_search);
+  }
+
+  // If the first word is NOT, add a space before it and the rebuilding of this below should handle the logic.
+  if (substr($search, 0, 4) == 'NOT ') {
+    $search = ' ' . $search;
+  }
+  if (strstr(strtoupper($search), ' _bcs_sp_rNOT_bcs_sp_l ')) {
+    // Set all instances of " NOT " to uppercase.
+    $search = str_replace(' _bcs_sp_rNOT_bcs_sp_l ', ' -', $search);
+  }
+
+  $search_parts = explode(" ", ltrim($search, ' '));
+  $fields_parts = explode(" ", $queryfields);
+  $solr_query = [];
+  $last_logic_key = '';
+  $logic = 'AND';
+  foreach ($search_parts as $search_part) {
+    $search_part_nospecial = trim(str_replace(['bcs_lparenthesis', 'bcs_rparenthesis', '_bcs_sp_l' ,'_bcs_sp_r'], ['(', ')', ' ', ' '], $search_part));
+    // Remove any parentheses for correct key values in $replacements array.
+    $replacements_key = str_replace(['(', ')'], '', $search_part_nospecial);
+    foreach ($fields_parts as $field_part) {
+      $field_part = str_replace('_und_', '_en_', $field_part);
+      @list($fieldname, $boostweight) = explode("^", $field_part);
+
+      if ($replacements_key) {
+        $logic = ($replacements_key == 'OR') ? 'OR' : 'AND';
+        if (($replacements_key <> 'AND') && ($replacements_key <> 'OR')) {
+          if (substr($replacements_key, 0, 1) == '-') {
+            $replacements_key = ltrim($replacements_key, '-');
+            $logic = 'NOT';
+          }
+          $replacements_key = idc_ui_module_quoted_strings($replacements_key, FALSE);
+          $replacements = $replacements_key; //str_replace(['_bcs_sp_l', '_bcs_sp_r'], '', $replacements_key);
+          // If this is NOT a quoted string or proximity search, we have to wrap with double quotes.
+          if (!(strstr($replacements, '~')) && !(strstr($replacements, '*')) && !(strstr($replacements, '"'))) {
+            $replacements = '"' . $replacements . '"';
+          }
+
+          if ($last_logic_key == '') { $last_logic_key = $logic; }
+          if (strstr($replacements, '*')) {
+            // Split into two parts
+            $query_wildcard_parts = explode("*", $replacements);
+            if (count($query_wildcard_parts) > 2) {
+              \Drupal::messenger()->addMessage('All logical operators must be ALL-caps (like "AND", "NOT", "OR"). The search term contained more than one wildcard.', 'warning');
+              $solr_query[$replacements][$last_logic_key][] = $fieldname . ':' . $replacements . ($boostweight ? '^' . $boostweight : '');
+            }
+            else {
+              $solr_query[$replacements][$last_logic_key][] = $fieldname . ':' . $replacements . ($boostweight ? '^' . $boostweight : '');
+            }
+          }
+          else {
+            $solr_query[$replacements][$last_logic_key][] = $fieldname . ':' . $replacements . ($boostweight ? '^' . $boostweight : '');
+          }
+        }
+      }
+    }
+    $last_logic_key = $logic;
+  }
+  \Drupal::logger('c')->info('solr_query(pre-split) = <pre>' . print_r($solr_query, true) . '</pre>');
+  $replacements = [];
+  foreach ($solr_query as $search_part => $logic_conditions) {
+    // Remove any parentheses for correct key values in $replacements array.
+    $replacements_key = str_replace(['(', ')'], '', $search_part);
+    if (array_search($replacements_key, $logical_operators) === FALSE) {
+      foreach ($logic_conditions as $logic => $conditions) {
+        $condition_str = implode(" ", $conditions);
+        $condition_str = str_replace(['bcs_lparenthesis', 'bcs_rparenthesis', '_bcs_sp_l', '_bcs_sp_r'], ['(', ')', '', ''], $condition_str);
+        if ($logic == 'AND' || $logic == 'OR') {
+          $replacements[$replacements_key] = '(' . $condition_str . ')';
+        }
+        elseif ($logic == 'NOT') {
+          $replacements[$replacements_key] = '-(' . $condition_str . ')';
+        }
+        \Drupal::logger('c')->info('replacements_key = ' . $replacements_key . ', replacements[$replacements_key] =<pre>' . print_r($replacements[$replacements_key], true) . '</pre>');
+
+      }
+    }
+  }
+  \Drupal::logger('c')->info('$replacements =<pre>' . print_r($replacements, true) . '</pre>');
+  \Drupal::logger('idc_ui_module')->info('c initial_search = ' . $initial_search);
+  // Reset the $initial_search variable, so that the build of the query matches the token-fields to replace.
+  $initial_search = idc_ui_module_quoted_strings($initial_search, FALSE);
+  \Drupal::logger('idc_ui_module')->info('d initial_search = ' . $initial_search);
+
+  // Remove the special characters and operators from the initial query and
+  // use that string as the token-replace for the above generated $replacements.
+  $solr_query_str = str_replace(
+    ['NOT ', /* '*',*/ '_bcs_sp_l AND _bcs_sp_r',
+      '"bcs_rparenthesis_bcs_sp_l _bcs_sp_rAND_bcs_sp_l _bcs_sp_rbcs_lparenthesis',
+      '_bcs_sp_l _bcs_sp_rAND_bcs_sp_l _bcs_sp_r',
+      '"_bcs_sp_l _bcs_sp_rOR_bcs_sp_l _bcs_sp_r',
+      '_bcs_sp_l _bcs_sp_rOR_bcs_sp_l _bcs_sp_r',
+      '"_bcs_sp_l _bcs_sp_rNOT_bcs_sp_l _bcs_sp_r',
+      '_bcs_sp_l _bcs_sp_rNOT_bcs_sp_l _bcs_sp_r',
+      'bcs_lparenthesis', 'bcs_rparenthesis', ' OR "'
+    ],
+    ['-', /* '',*/ ' AND ', ' AND ', ' AND ', ' OR ', ' OR ', ' -', ' -', '(', ')', ' OR '],
+    $initial_search);
+  \Drupal::logger('idc_ui_module')->info('solr_query_str = ' . $solr_query_str);
+
+  foreach ($replacements as $search_part => $replacement) {
+    // Special handling for quoted strings.
+    if (!(strstr($search_part, '~'))) {
+      // ONLY do this if the part contains two double-quotes and trailing is not "_bcs_sp_l"
+      $num_quotes = substr_count($search_part, '"');
+      $trailing_9 = substr($search_part, strlen($search_part) - 9);
+      if ($num_quotes == 2 && $trailing_9 <> '_bcs_sp_l') {
+        $search_part = str_replace('"', '', $search_part);
+      }
+    }
+    $term = $search_part; //str_replace("*", "", $search_part);
+    if (array_search($term, $logical_operators) === FALSE) {
+      \Drupal::logger('idc_ui_module')->info('term = ' . $term);
+      $solr_query_str = str_replace($term, $replacement, $solr_query_str);
+    }
+  }
+
+  // Remove the "+" from the quoted strings so that the query comes out ok.
+  $solr_query_str = idc_ui_module_removespaces_quoted_strings($solr_query_str, '+', ' ');
+  // Bit of a hack, but when the entire initial search was double-quoted, fix the $solr_query_str.
+  $first_two_char = substr($solr_query_str, 0, 2);
+  $last_two_char = substr($solr_query_str, strlen($solr_query_str) - 2, 2);
+  if ($first_two_char == '"(' && $last_two_char == ')"') {
+    $solr_query_str = rtrim(ltrim($solr_query_str, '"'), '"');
+  }
+  if ($solr_query_str == '') { $solr_query_str = '*:*'; }
+  \Drupal::logger('idc_ui_module')->info('solr query = ' . $solr_query_str);
+  return $solr_query_str;
 }
+
+function idc_ui_module_quoted_strings($search, $solidify = TRUE) {
+  if ($solidify) {
+    preg_match_all('/"([^"]+)"/', $search, $m);
+    foreach ($m[0] as $quoted_string) {
+      $replace_with = str_replace([" ", '"'], ["_bcs_quote_sp_", "_bcs_dquote_"], $quoted_string);
+      $search = str_replace($quoted_string, $replace_with, $search);
+    }
+  }
+  else {
+    $search = str_replace(["_bcs_quote_sp_", "_bcs_dquote_"], [" ", '"'], $search);
+
+  }
+  return $search;
+}
+
+/**
+ * Helper function to split a search into condition terms - especially
+ * regarding when a wildcard is mid-string.
+ */
+function idc_ui_module_adjust_for_midwildcards($search) {
+  $quote = '"';
+  $search = ltrim(rtrim($search, ')'), '(');
+  $terms = [];
+  $tmp_terms = explode(" ", $search);
+  foreach ($tmp_terms as $tmp_term) {
+    // If the wildcard character is mid-string, split that into
+    // two conditions like "prefix*suffix" becomes both "prefix*" and
+    // "*suffix".
+    \Drupal::logger('idc_ui_module')->info("tmp_term <pre>" . $tmp_term . '</pre>');
+    if (strstr($tmp_term, "*")) {
+      $tmp_term = ltrim(rtrim($tmp_term, "*"), "*");
+      \Drupal::logger('idc_ui_module')->info("tmp_term no end/lead * <pre>" . $tmp_term . '</pre>');
+      $term_parts = explode("*", $tmp_term);
+      \Drupal::logger('idc_ui_module')->info("term_parts = <pre>" . print_r($term_parts, true) . '</pre>');
+      
+      if (count($term_parts) == 2) {
+        $terms[] = $quote . $term_parts[0] . '*' . $quote;
+        $terms[] = $quote . '*' . $term_parts[1] . $quote;
+      }
+    }
+    else {
+      $terms[] = $quote . $tmp_term . $quote;
+    }
+  }
+  return '(' . implode(' AND ', $terms) . ')';
+} 
 
 // JHU does not use groups for access control.
 /*
@@ -369,3 +597,81 @@ function idc_ui_module_get_account_access_filter() {
   return '(' . implode(" AND ", $conditions) . ')';
 }
 */
+
+// NOTE: The $search parameter is passed by reference and will be changed in this code if needed.
+// The return value will be an array that includes any terms that were ignored.
+//
+// Helper function to remove any search terms that are outside of the required lenght as specified
+// by the solr schema.xml as specified by the LengthFilterFactory min=2, max=100.c
+function idc_ui_module_remove_badlength_searchterms(&$search) {
+  $newparts = $removed_searchterms = [];
+  $parts = explode(" ", $search);
+  foreach ($parts as $part) {
+    if ((strlen($part) < 2) || (strlen($part) > 100)) {
+      $removed_searchterms[] = $part;
+    }
+    else {
+      $newparts[] = $part;
+    }
+  }
+  $search = implode(" ", $newparts);
+  return $removed_searchterms;
+}
+
+function idc_ui_module_remove_stopwords($search) {
+  // Get the stopwords from the config for the current language.
+  $lang_code = \Drupal::languageManager()->getCurrentLanguage()->getId();
+  $url = '/solr/ISLANDORA/admin/file?wt=json&_=1655405421219&file=stopwords_' .
+    $lang_code . '.txt&contentType=text%2Fplain%3Bcharset%3Dutf-8';
+  // Use Guzzle HTTP client to pull in that file.
+  try {
+    $response = \Drupal::httpClient()->get('http://solr:8983'. $url, ['allow_redirects' => true]);
+    $stopwords = $response->getBody();
+    $stopwords = explode("
+  ", $stopwords);
+    }
+  catch (ClientException $e) {
+    // If there was a problem with the call to get the current Solr config
+    // stopwords for the users' language code, provide defaults values.
+    $stopwords = ["a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in", "into", "is", "it", "no", "not", "of", "on", "or", "s", "such", "t", "that", "the", "their", "then", "there", "these", "they", "this", "to", "was", "will", "with"];
+  }
+  // Either way, allow the logical operators if they are used.
+  $keepwords = ['and', 'not', 'or'];
+  foreach ($keepwords as $keepword) {
+    $at = array_search($keepword, $stopwords);
+    if (!($at === FALSE)) {
+      unset($stopwords[$at]);
+    }
+  }  
+  $temp = idc_ui_module_quoted_strings($search);
+  $parts = explode(" ", $temp);
+  $newparts = [];
+  foreach ($parts as $part) {
+    $solidified_part = idc_ui_module_quoted_strings($part, TRUE);
+    // Skip if the terms are quoted strings.
+    if (!strstr($part, "_bcs_quote_sp_")) {
+      $textonly_part = strtolower(preg_replace( '/[\W]/', '', $solidified_part));
+      if (array_search($textonly_part, $stopwords) === FALSE) {
+        $newparts[] = $solidified_part;
+      }
+    }
+    else {
+      // This is a solidified quoted value, so it can stay.
+      $newparts[] = $solidified_part;
+    }
+  }
+  return implode(" ", $newparts);
+}
+
+function idc_ui_module_removespaces_quoted_strings($search, $replace_char = ' ', $replace_with_char = '+') {
+  if(preg_match_all("/[\"]{1}(.*?)[\"]{1}/im", $search, $matches)) {
+    if (array_key_exists(1, $matches)) {
+      foreach ($matches[1] as $match) {
+        $replace_with = str_replace($replace_char, $replace_with_char, $match);
+        $search = str_replace($match, $replace_with, $search);
+      }
+    }
+  }
+  // Fix a double negative which can occur when using a NOT at the beginning of a search.
+  return str_replace('--', '*:* AND -', $search);
+}
